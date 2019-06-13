@@ -21,7 +21,7 @@ var _connectToSalesforce = function () {
             if (error) {
                 reject(error);
             } else {
-                //console.log(JSON.stringify(userInfo));
+                console.log(JSON.stringify(userInfo));
                 resolve();
             }
         });
@@ -167,6 +167,7 @@ var _getAuraFiles = function(latestCommonCommitDate) {
 
 var _getSalesforceFiles = function () {
     return new Promise(function (resolve, reject) {
+        console.log('right before get last commit');
         return _getLastCommit().then(function (lastCommitResp) {
             const latestCommitDate = lastCommitResp.data[0].commit.author.date;
 
@@ -200,6 +201,7 @@ var _getSalesforceFiles = function () {
 
 
 var _getLastCommit = function (path) {
+    console.log('here in _getLastCommit');
     return octokit.repos.listCommits({
         owner : OWNER, repo : REPO, per_page : 1, path : path === undefined ? '/' : path
     })
@@ -257,6 +259,7 @@ var _getPath = function (file) {
 }
 
 var _commitChanges = function (allChanges) {
+    console.log('here in _commitChanges');
     if (allChanges.length > 0) {
         return _getLastCommit().then(function (latestCommit) {
             //console.debug('_getLastCommit result ' + JSON.stringify(latestCommit));
@@ -301,8 +304,9 @@ var _commitChanges = function (allChanges) {
 
 var _main = function () {
     _connectToSalesforce().then(function () {
-
+        console.log('connected to sfdc');
         _getSalesforceFiles().then(function (sfFiles) {
+            console.log(sfFiles);
             if (sfFiles.length > 0) {
                 _commitChanges(sfFiles).then(function () {
                     console.debug('Commit completed');
