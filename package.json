@@ -1,0 +1,10 @@
+{
+  "name": "sfgit",
+  "version": "0.0.0",
+  "private": true,
+  "dependencies": {
+    "@octokit/rest": "^16.25.2",
+    "config": "^3.1.0",
+    "jsforce": "1.8.5"
+  }
+}
