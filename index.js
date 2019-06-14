@@ -21,75 +21,9 @@ var _connectToSalesforce = function () {
             if (error) {
                 reject(error);
             } else {
-                console.log(JSON.stringify(userInfo));
-                resolve();
+                //console.log(JSON.stringify(userInfo));
+                resolve(userInfo);
             }
-        });
-    });
-}
-
-var _getApexClasses = function(latestCommonCommitDate) {
-    return _getLastCommit('src/classes').then(function (lastPathCommitResp) {
-        return new Promise(function (resolve, reject) {
-            var sfFiles = {};
-            conn.query('select Id, Name, Body, LastModifiedDate, LastModifiedBy.Name, LastModifiedBy.Email ' +
-                'from ApexClass where NamespacePrefix = null and LastModifiedDate >= ' +  _getLastCommitDate(latestCommonCommitDate, lastPathCommitResp))
-                .on('record', function (record) {
-                    var email = record.LastModifiedBy.Email;
-                    if (sfFiles[email] === undefined) {
-                        sfFiles[email] = {
-                            committer: {
-                                name: record.LastModifiedBy.Name,
-                                email: email
-                            },
-                            contents: []
-                        }
-                    }
-                    sfFiles[email].contents.push({
-                        content: record.Body,
-                        path: _getPath(record),
-                        mode: '100644',
-                        type: 'blob'
-                    });
-                }).on('error', function (err) {
-                    console.error(err);
-                    reject(error);
-            }).on('end', function () {
-                resolve(sfFiles);
-            }).run({autoFetch: true});
-        });
-    });
-}
-
-var _getApexTriggers = function(latestCommonCommitDate) {
-    return _getLastCommit('src/triggers').then(function (lastPathCommitResp) {
-        return new Promise(function (resolve, reject) {
-            var sfFiles = {};
-            conn.query('select Id, Name, Body, LastModifiedDate, LastModifiedBy.Name, LastModifiedBy.Email ' +
-                'from ApexTrigger where NamespacePrefix = null and LastModifiedDate >= ' +  _getLastCommitDate(latestCommonCommitDate, lastPathCommitResp))
-                .on('record', function (record) {
-                    var email = record.LastModifiedBy.Email;
-                    if (sfFiles[email] === undefined) {
-                        sfFiles[email] = {
-                            committer: {
-                                name: record.LastModifiedBy.Name,
-                                email: email
-                            },
-                            contents: []
-                        }
-                    }
-                    sfFiles[email].contents.push({
-                        content: record.Body,
-                        path: _getPath(record),
-                        mode: '100644',
-                        type: 'blob'
-                    });
-                }).on('error', function (err) {
-                console.error(err);
-                reject(error);
-            }).on('end', function () {
-                resolve(sfFiles);
-            }).run({autoFetch: true});
         });
     });
 }
@@ -100,8 +34,8 @@ var _getLastCommitDate = function (latestCommonCommitDate, lastPathCommitResp) {
 }
 
 var _getApexPages = function (latestCommonCommitDate) {
-    return _getLastCommit('src/pages').then(function (lastPathCommitResp) {
-        return new Promise(function (resolve, reject) {
+    return new Promise(function (resolve, reject) {
+        _getLastCommit('src/pages').then(function (lastPathCommitResp) {
             var sfFiles = {};
             conn.query('select Id, Name, Markup, LastModifiedDate, LastModifiedBy.Name, LastModifiedBy.Email ' +
                 'from ApexPage where NamespacePrefix = null and LastModifiedDate >= ' + _getLastCommitDate(latestCommonCommitDate, lastPathCommitResp))
@@ -123,18 +57,58 @@ var _getApexPages = function (latestCommonCommitDate) {
                         type: 'blob'
                     });
                 }).on('error', function (err) {
+                reject(error);
+            }).on('end', function () {
+                resolve(sfFiles);
+            }).run({autoFetch: true});
+        }).catch(err => {
+            reject(err);
+        });
+    });
+}
+
+//select Id, Source, DefType, DeveloperName, LastModifiedDate, CreatedBy.Name, CreatedBy.Email, LastModifiedBy.Name, LastModifiedBy.Email from AuraDefinitionInfo where NamespacePrefix = null
+//select Id, Name, Markup from ApexPage  where NamespacePrefix = null
+//select Id, Name, Markup from ApexComponent  where NamespacePrefix = null
+
+var _getAllApexClasses = function(latestCommonCommitDate) {
+    return new Promise(function (resolve, reject) {
+        _getLastCommit('src/classes').then(function (lastPathCommitResp) {
+            var sfFiles = {};
+            conn.query('select Id, Name, Body, LastModifiedDate, LastModifiedBy.Name, LastModifiedBy.Email ' +
+                'from ApexClass where NamespacePrefix = null and LastModifiedDate >= ' +  _getLastCommitDate(latestCommonCommitDate, lastPathCommitResp))
+                .on('record', function (record) {
+                    var email = record.LastModifiedBy.Email;
+                    if (sfFiles[email] === undefined) {
+                        sfFiles[email] = {
+                            committer: {
+                                name: record.LastModifiedBy.Name,
+                                email: email
+                            },
+                            contents: []
+                        }
+                    }
+                    sfFiles[email].contents.push({
+                        content: record.Body,
+                        path: _getPath(record),
+                        mode: '100644',
+                        type: 'blob'
+                    });
+                }).on('error', function (err) {
                 console.error(err);
                 reject(error);
             }).on('end', function () {
                 resolve(sfFiles);
             }).run({autoFetch: true});
+        }).catch(err => {
+            reject(err);
         });
     });
 }
 
 var _getAuraFiles = function(latestCommonCommitDate) {
-    return _getLastCommit('src/aura').then(function (lastPathCommitResp) {
-        return new Promise(function (resolve, reject) {
+    return new Promise(function (resolve, reject) {
+        _getLastCommit('src/aura').then(function (lastPathCommitResp) {
             var sfFiles = {};
             conn.query('select Id, Source, DefType, AuraDefinitionBundle.DeveloperName, LastModifiedDate, LastModifiedBy.Name, LastModifiedBy.Email ' +
                 'from AuraDefinition where AuraDefinitionBundle.NamespacePrefix = null and LastModifiedDate >= ' + _getLastCommitDate(latestCommonCommitDate, lastPathCommitResp))
@@ -161,18 +135,17 @@ var _getAuraFiles = function(latestCommonCommitDate) {
             }).on('end', function () {
                 resolve(sfFiles);
             }).run({autoFetch: true});
+        }).catch(err => {
+            reject(err);
         });
     });
 }
 
 var _getSalesforceFiles = function () {
     return new Promise(function (resolve, reject) {
-        console.log('right before get last commit');
-        return _getLastCommit().then(function (lastCommitResp) {
+        _getLastCommit().then(function (lastCommitResp) {
             const latestCommitDate = lastCommitResp.data[0].commit.author.date;
-
-            return Promise.all([_getApexClasses(latestCommitDate), _getAuraFiles(latestCommitDate),
-                    _getApexPages(latestCommitDate), _getApexTriggers(latestCommitDate)])
+            Promise.all([_getAllApexClasses(latestCommitDate), _getAuraFiles(latestCommitDate), _getApexPages(latestCommitDate)])
                 .then(function (sfFiles) {
                     var sfFilesTmp = {};
                     for (var i in sfFiles) {
@@ -192,16 +165,17 @@ var _getSalesforceFiles = function () {
 
                     resolve(sfFilesArray)
                 }).catch(function (error) {
-                    console.error(error);
-                    reject(error);
-                })
-        })
+                console.error(error);
+                reject(error);
+            })
+        }).catch(err => {
+            reject(err);
+        });
     })
 }
 
 
 var _getLastCommit = function (path) {
-    console.log('here in _getLastCommit');
     return octokit.repos.listCommits({
         owner : OWNER, repo : REPO, per_page : 1, path : path === undefined ? '/' : path
     })
@@ -252,64 +226,59 @@ var _getPath = function (file) {
         return 'src/classes/' + file.Name + '.cls';
     } else if (file.attributes.type == 'ApexPage') {
         return 'src/pages/' + file.Name + '.page';
-    } else if (file.attributes.type == 'ApexTrigger') {
-        return 'src/triggers/' + file.Name;
     }
     throw new Error('File type does not supported ' + file.attributes.type);
 }
 
 var _commitChanges = function (allChanges) {
-    console.log('here in _commitChanges');
-    if (allChanges.length > 0) {
-        return _getLastCommit().then(function (latestCommit) {
-            //console.debug('_getLastCommit result ' + JSON.stringify(latestCommit));
-            var currentChanges = allChanges.shift();
-            return _createNewTree(currentChanges.contents, latestCommit.data[0].sha).then(function (newTreeResponse) {
-                //console.debug('_createNewTree result ' + JSON.stringify(newTreeResponse));
-                return _createCommit(newTreeResponse.data.sha, latestCommit.data[0].sha, currentChanges.committer).then(function (commitResp) {
-                    //console.debug('_createCommit result ' + JSON.stringify(commitResp));
-                    octokit.git.updateRef({
-                        owner: OWNER,
-                        repo: REPO,
-                        sha: commitResp.data.sha,
-                        ref : config.get('GIT_BRANCH')
-                        //ref: currentChanges.committer.email == 'slegostaev@mycervello.com' ? 'heads/sl-test' : config.get('GIT_BRANCH')
-                    }).then(function (updateRefResp) {
-                        if (allChanges.length > 0) {
-                            return _commitChanges(allChanges);
-                        } else {
-                            return new Promise(function (resolve, reject) {
-                                resolve();
-                            })
-                        }
-                    }).catch(function (error) {
-                        console.error(error)
-                    })
-                }).catch(function (error) {
-                    console.error(error)
-                })
-            })
-
-        }).catch(function (error) {
-            console.error(error)
-        })
-    }
-
     return new Promise(function (resolve, reject) {
-        console.debug('No updates');
-        resolve();
-    })
+        if (allChanges.length > 0) {
+            _getLastCommit().then(function (latestCommit) {
+                //console.debug('_getLastCommit result ' + JSON.stringify(latestCommit));
+                var currentChanges = allChanges.shift();
+                _createNewTree(currentChanges.contents, latestCommit.data[0].sha).then(function (newTreeResponse) {
+                    //console.debug('_createNewTree result ' + JSON.stringify(newTreeResponse));
+                    _createCommit(newTreeResponse.data.sha, latestCommit.data[0].sha, currentChanges.committer).then(function (commitResp) {
+                        //console.debug('_createCommit result ' + JSON.stringify(commitResp));
+                        octokit.git.updateRef({
+                            owner: OWNER,
+                            repo: REPO,
+                            sha: commitResp.data.sha,
+                            ref: config.get('GIT_BRANCH')
+                        }).then(function (updateRefResp) {
+                            if (allChanges.length > 0) {
+                                _commitChanges(allChanges);
+                            } else {
+                                resolve('Commit completed');
+                            }
+                        }).catch(err => {
+                            reject(err);
+                        })
+                    }).catch(err => {
+                        reject(err);
+                    })
+                }).catch(err => {
+                    reject(err);
+                })
+
+            }).catch(err => {
+                reject(err);
+            })
+        } else {
+            console.debug('No updates');
+            resolve();
+        }
+    });
 }
 
 
 var _main = function () {
     _connectToSalesforce().then(function () {
-        console.log('connected to sfdc');
+
         _getSalesforceFiles().then(function (sfFiles) {
-            console.log(sfFiles);
             if (sfFiles.length > 0) {
-                _commitChanges(sfFiles).then(function () {
-                    console.debug('Commit completed');
+                _commitChanges(sfFiles).then(function (result) {
+                    console.debug('Commit completed: ' + result);
                 }).catch(function (error) {
                     console.error(error);
                 })
@@ -320,8 +289,6 @@ var _main = function () {
         }).catch(function (error) {
             console.error(error);
         })
-
-
     }).catch(function (error) {
         console.error(error);
     })
