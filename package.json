@@ -4,7 +4,7 @@
   "private": true,
   "dependencies": {
     "@octokit/rest": "^16.25.2",
-    "config": "^3.1.0",
+    "config": "^3.3.8",
     "jsforce": "1.8.5"
   }
 }
